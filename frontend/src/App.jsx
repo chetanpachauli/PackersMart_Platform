@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import LeadForm from './components/LeadForm';
 import OtpModal from './components/OtpModal';
 import AdminDashboard from './components/AdminDashboard';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('form');
+  // Sync tab state with browser URL path
+  const getTabFromUrl = () => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    if (path.includes('/admin') || hash.includes('admin')) return 'admin';
+    return 'form';
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromUrl());
   const [currentLeadForOtp, setCurrentLeadForOtp] = useState(null);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveTab(getTabFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    const newPath = tab === 'admin' ? '/admin' : '/booking';
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({ tab }, '', newPath);
+    }
+  };
 
   const handleLeadCreated = (leadData) => {
     setCurrentLeadForOtp(leadData);
@@ -14,12 +38,12 @@ export default function App() {
 
   const handleVerificationSuccess = (result) => {
     setCurrentLeadForOtp(null);
-    setActiveTab('admin');
+    changeTab('admin');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <Navbar activeTab={activeTab} setActiveTab={changeTab} />
 
       <main className="flex-1">
         {activeTab === 'form' ? (
@@ -40,8 +64,8 @@ export default function App() {
         )}
       </main>
 
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        <p>PackersMart Platform &copy; 2026 </p>
+      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 font-medium">
+        <p>PackersMart Platform &copy; 2026 — Enterprise Full-Stack Assessment</p>
       </footer>
     </div>
   );
